@@ -9,16 +9,48 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+
   @override
   void initState() {
     super.initState();
 
-    Future.delayed(const Duration(seconds: 20), () {
-      if (mounted) {
-        context.go('/onboarding');
-      }
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 10.5).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) context.go('/onboarding');
     });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _buildAnimatedSvg(String asset, Alignment alignment, double width) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
+        );
+      },
+      child: SvgPicture.asset(asset, width: width),
+    );
   }
 
   @override
@@ -27,24 +59,16 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Donji zrakasti ukras (ako koristiš SVG ili PNG)
-          // Positioned(
-          //   bottom: 0,
-          //   right: 0,
-          //   child: Image.asset(
-          //     'assets/splash_bg_bottom.svg', // koristi svg ako imaš: SvgPicture.asset
-          //     width: 140,
-          //   ),
-          // ),
-
-          // Gornji zrakasti ukras (ako postoji)
-          // Positioned(
-          //   top: 0,
-          //   left: 0,
-          //   width: 100,
-          //   child: SvgPicture.asset('assets/splash_bg_top.svg'),
-          // ),
-
+          Positioned(
+            bottom: -80,
+            right: 0,
+            child: _buildAnimatedSvg('assets/splash_bg_top.svg', Alignment.bottomRight, 140),
+          ),
+          Positioned(
+            top: 0,
+            left: -80,
+            child: _buildAnimatedSvg('assets/splash_bg_bottom.svg', Alignment.topLeft, 180),
+          ),
           Center(
             child: Image.asset(
               'assets/logo.png',
